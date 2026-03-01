@@ -1,73 +1,83 @@
 # EvaluAI Frontend
 
-React frontend para EvaluAI Profesor
+React frontend para EvaluAI Profesor - Plataforma SaaS de evaluación académica con IA
 
-## 🚀 Deploy en GitHub Pages (Gratuito)
+## 🚀 Deploy en Vercel (Recomendado)
 
-### Paso 1: Subir a GitHub
+### Paso 1: Conectar Repositorio
+
+1. Ve a [vercel.com](https://vercel.com) e inicia sesión con GitHub
+2. Click **"Add New Project"**
+3. Importar desde GitHub: `elescuchante10-code/evaluai-frontend`
+4. Selecciona el framework **"Create React App"**
+
+### Paso 2: Configurar Variables de Entorno
+
+En el dashboard de Vercel, agrega:
+
+| Variable | Valor |
+|----------|-------|
+| `REACT_APP_API_URL` | `https://web-production-83f44.up.railway.app` |
+
+### Paso 3: Verificar Build Settings
+
+| Campo | Valor |
+|-------|-------|
+| Framework Preset | Create React App |
+| Build Command | `npm run build` |
+| Output Directory | `build` |
+| Install Command | `npm install` |
+
+### Paso 4: Deploy
+
+Click **"Deploy"** y espera a que termine el build.
+
+Tu app estará disponible en: `https://evaluai-frontend.vercel.app`
+
+---
+
+## 🔗 Conexión con Backend
+
+El backend está desplegado en Railway:
+- **URL Base:** `https://web-production-83f44.up.railway.app`
+
+### Endpoints utilizados:
+
+| Endpoint | Método | Descripción |
+|----------|--------|-------------|
+| `/evaluaciones/asignaturas/lista` | GET | Lista asignaturas disponibles |
+| `/evaluaciones/subir` | POST | Subir documento (multipart/form-data) |
+
+### Asignaturas soportadas:
+- 📐 Matemáticas
+- 📚 Lengua Castellana  
+- 🗣️ Inglés
+- 🌍 Ciencias Sociales
+- 🔬 Ciencias Naturales
+
+---
+
+## ✅ Checklist de Verificación Post-Deploy
+
+Una vez desplegado, verifica:
+
+- [ ] La app carga sin errores 404
+- [ ] El selector de asignaturas muestra opciones (hace fetch al backend)
+- [ ] Se puede seleccionar un archivo PDF/DOCX/TXT
+- [ ] Al enviar, muestra la estimación de costo
+
+**Prueba de conectividad:**
+```
+https://web-production-83f44.up.railway.app/evaluaciones/asignaturas/lista
+```
+Debe retornar JSON con lista de asignaturas.
+
+---
+
+## 💻 Desarrollo Local
 
 ```bash
 cd frontend
-git init
-git add .
-git commit -m "Frontend v1.0"
-git remote add origin https://github.com/elescuchante10-code/evaluai-frontend.git
-git push -u origin main
-```
-
-### Paso 2: Instalar dependencias y hacer deploy
-
-```bash
-# Instalar dependencias
-npm install
-
-# Hacer deploy a GitHub Pages
-npm run deploy
-```
-
-Esto creará automáticamente la rama `gh-pages` y desplegará la app.
-
-### Paso 3: Configurar GitHub Pages
-
-1. Ve a tu repositorio en GitHub: `https://github.com/elescuchante10-code/evaluai-frontend`
-2. Ve a **Settings** → **Pages**
-3. En "Source", selecciona la rama `gh-pages`
-4. Click en **Save**
-5. Espera 1-2 minutos y tu app estará en:
-   ```
-   https://elescuchante10-code.github.io/evaluai-frontend
-   ```
-
-### Paso 4: Configurar variable de entorno (Backend)
-
-El backend ya está configurado en `App.js`:
-```javascript
-const API_URL = 'https://web-production-83f44.up.railway.app';
-```
-
-Si necesitas cambiarlo, modifica la línea 4 en `src/App.js`.
-
----
-
-## 🔄 Actualizar el deploy
-
-Cada vez que hagas cambios:
-
-```bash
-# Hacer commit de los cambios
-git add .
-git commit -m "Descripción de cambios"
-git push
-
-# Redeployar
-npm run deploy
-```
-
----
-
-## 💻 Desarrollo local
-
-```bash
 npm install
 npm start
 ```
@@ -76,23 +86,40 @@ Abre http://localhost:3000
 
 ---
 
-## 📁 Estructura del proyecto
+## 📁 Estructura del Proyecto
 
 ```
 frontend/
 ├── public/
 │   └── index.html          # HTML base
 ├── src/
-│   ├── App.js              # Componente principal
+│   ├── App.js              # Componente principal (486 líneas)
 │   └── index.js            # Punto de entrada
-├── package.json            # Dependencias y scripts
+├── package.json            # Dependencias
+├── vercel.json             # Configuración de Vercel
 └── README.md               # Este archivo
 ```
 
 ---
 
-## ⚠️ Notas importantes
+## 🎨 Detalles Técnicos
 
-- GitHub Pages sirve sitios estáticos, el backend debe estar desplegado por separado (Railway)
-- El primer deploy puede tardar 1-2 minutos en estar disponible
-- Si ves errores 404, verifica que la URL en `package.json` → `homepage` sea correcta
+- **Framework:** React 18.2.0
+- **Estilos:** Inline styles (sin CSS modules)
+- **Flujo:** 3 pasos (Subir → Estimar → Resultados)
+- **Backend:** Python + FastAPI en Railway
+
+---
+
+## 🚨 Troubleshooting
+
+### Error CORS
+Si ves errores de CORS, verifica que el backend permita el origen de Vercel.
+
+### Build falla
+- Asegúrate que `package.json` está en la raíz del repo
+- Node version: 18.x (estándar en Vercel)
+
+### Asignaturas no cargan
+- Verifica que `REACT_APP_API_URL` esté configurada en Vercel
+- Prueba el endpoint directamente en el navegador

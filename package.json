@@ -2,7 +2,7 @@
   "name": "evaluai-frontend",
   "version": "1.0.0",
   "private": true,
-  "homepage": "https://elescuchante10-code.github.io/evaluai-frontend",
+  "homepage": ".",
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
