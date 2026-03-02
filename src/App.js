@@ -95,16 +95,20 @@ function App() {
     setError('');
     
     try {
+      console.log('Intentando login:', email);
       const data = await authAPI.login(email, password);
+      console.log('Respuesta login:', data);
+      
       if (data.success) {
         setUser(data.user);
         setCurrentView('dashboard');
         cargarHistorial();
       } else {
-        setError(data.message || 'Error al iniciar sesion');
+        setError(data.message || data.detail || JSON.stringify(data) || 'Error al iniciar sesion');
       }
     } catch (err) {
-      setError('Error de conexion con el servidor');
+      console.error('Error login:', err);
+      setError('Error de conexion: ' + (err.message || 'No se pudo conectar'));
     } finally {
       setIsLoading(false);
     }
@@ -116,15 +120,19 @@ function App() {
     setError('');
     
     try {
+      console.log('Intentando registrar:', { email, nombre });
       const data = await authAPI.register(email, password, nombre, '');
+      console.log('Respuesta del servidor:', data);
+      
       if (data.success) {
         setUser(data.user);
         setCurrentView('dashboard');
       } else {
-        setError(data.message || 'Error al crear cuenta');
+        setError(data.message || data.detail || JSON.stringify(data) || 'Error al crear cuenta');
       }
     } catch (err) {
-      setError('Error de conexion con el servidor');
+      console.error('Error completo:', err);
+      setError('Error de conexion: ' + (err.message || 'No se pudo conectar al servidor'));
     } finally {
       setIsLoading(false);
     }

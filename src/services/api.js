@@ -16,31 +16,61 @@ const getHeaders = (contentType = 'application/json') => {
 // ==================== AUTENTICACION ====================
 export const authAPI = {
   login: async (email, password) => {
-    const response = await fetch(`${API_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await response.json();
-    if (data.success && data.access_token) {
-      localStorage.setItem('token', data.access_token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+    try {
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { success: false, message: `Error ${response.status}: ${errorText}` };
+      }
+      
+      const data = await response.json();
+      if (data.success && data.access_token) {
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+      return data;
+    } catch (error) {
+      return { success: false, message: error.message };
     }
-    return data;
   },
 
   register: async (email, password, full_name, institution = '') => {
-    const response = await fetch(`${API_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, full_name, institution }),
-    });
-    const data = await response.json();
-    if (data.success && data.access_token) {
-      localStorage.setItem('token', data.access_token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+    try {
+      console.log('Enviando peticion a:', `${API_URL}/auth/register`);
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'omit',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, full_name, institution }),
+      });
+      
+      console.log('Status de respuesta:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error HTTP:', response.status, errorText);
+        return { success: false, message: `Error ${response.status}: ${errorText}` };
+      }
+      
+      const data = await response.json();
+      console.log('Datos recibidos:', data);
+      
+      if (data.success && data.access_token) {
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+      return data;
+    } catch (error) {
+      console.error('Error en fetch:', error);
+      return { success: false, message: error.message };
     }
-    return data;
   },
 
   logout: () => {
