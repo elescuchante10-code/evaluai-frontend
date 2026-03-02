@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PagoNequiComponent from './components/PagoNequi';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://web-production-83f44.up.railway.app';
 
@@ -340,70 +341,11 @@ function App() {
 
   // ==================== PASARELA DE PAGOS (Nequi QR) ====================
   const renderPago = () => (
-    <div style={styles.auth.container}>
-      <div style={styles.auth.card}>
-        <button 
-          onClick={() => setCurrentView('register')}
-          style={styles.auth.backButton}
-        >
-          ← Volver
-        </button>
-        
-        <div style={styles.auth.logo}>🎓 EvaluAPP</div>
-        <h1 style={styles.auth.title}>Pago del Plan Profesor</h1>
-        
-        <div style={pagoStyles.resumen}>
-          <div style={pagoStyles.resumenRow}>
-            <span>Plan:</span>
-            <span style={pagoStyles.resumenValue}>Profesor (1 mes)</span>
-          </div>
-          <div style={pagoStyles.resumenRow}>
-            <span>Total a pagar:</span>
-            <span style={pagoStyles.resumenTotal}>$30.000 COP</span>
-          </div>
-        </div>
-
-        <div style={pagoStyles.qrContainer}>
-          <p style={pagoStyles.qrTitle}>📱 Escanea con Nequi o Daviplata</p>
-          
-          {/* Placeholder para QR - aquí iría tu QR real */}
-          <div style={pagoStyles.qrBox}>
-            <div style={pagoStyles.qrPlaceholder}>
-              <span style={pagoStyles.qrIcon}>📲</span>
-              <p style={pagoStyles.qrText}>CODIGO QR NEQUI</p>
-              <p style={pagoStyles.qrSubtext}># de celular: 312 345 6789</p>
-            </div>
-          </div>
-          
-          <p style={pagoStyles.qrInstructions}>
-            1. Abre Nequi o Daviplata<br/>
-            2. Escanea el codigo QR o busca el numero<br/>
-            3. Envia $30.000 COP<br/>
-            4. Despues del pago, haz clic en "Ya pague"
-          </p>
-        </div>
-
-        <div style={pagoStyles.metodosAlternativos}>
-          <p style={pagoStyles.metodosTitle}>Otros metodos de pago:</p>
-          <div style={pagoStyles.metodosList}>
-            <span style={pagoStyles.metodo}>🏦 Bancolombia</span>
-            <span style={pagoStyles.metodo}>💳 Tarjeta</span>
-            <span style={pagoStyles.metodo}>🏪 Efecty</span>
-          </div>
-        </div>
-
-        <button 
-          onClick={handlePagoCompleto}
-          style={pagoStyles.pagoButton}
-        >
-          ✅ Ya realice el pago - Entrar a EvaluAPP
-        </button>
-        
-        <p style={pagoStyles.notaSeguridad}>
-          🔒 Al hacer clic confirmas que realizaste el pago. Verificaremos en las proximas 24 horas.
-        </p>
-      </div>
-    </div>
+    <PagoNequiComponent 
+      email={email}
+      onPagoCompleto={handlePagoCompleto}
+      onVolver={() => setCurrentView('register')}
+    />
   );
 
   // ==================== DASHBOARD ====================
