@@ -2,14 +2,17 @@
 const API_URL = process.env.REACT_APP_API_URL || 'https://web-production-83f44.up.railway.app';
 
 // MODO DEMO: Cambiar a false cuando el backend esté listo
-const MODO_DEMO = true;
+const MODO_DEMO = false;
 
 // Helper para obtener headers con token
 const getHeaders = (contentType = 'application/json') => {
   const token = localStorage.getItem('token');
   const headers = {
-    'Authorization': token ? `Bearer ${token}` : '',
+    'Accept': 'application/json',
   };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
   if (contentType) {
     headers['Content-Type'] = contentType;
   }
@@ -136,6 +139,8 @@ export const authAPI = {
 
   getMe: async () => {
     const response = await fetch(`${API_URL}/auth/me`, {
+      method: 'GET',
+      mode: 'cors',
       headers: getHeaders(),
     });
     return response.json();
@@ -148,55 +153,25 @@ export const agenteAPI = {
     // MODO DEMO: Respuestas simuladas del agente
     if (MODO_DEMO) {
       console.log('🎮 MODO DEMO: Chat simulado');
-      
-      // Simular delay
       await new Promise(r => setTimeout(r, 800));
       
       const respuestas = {
-        'hola': '¡Hola! 👋 Bienvenido a EvaluAPP. Soy tu agente de evaluación. Puedo ayudarte a evaluar documentos, crear rúbricas y analizar resultados. ¿Qué te gustaría hacer?',
-        'evaluar': '¡Perfecto! Para evaluar un documento, primero dime ¿de qué asignatura se trata? (matemáticas, lenguaje, ciencias, etc.)',
-        'matematicas': 'Excelente. Las matemáticas requieren evaluar procedimiento, resultado y justificación. ¿Tienes una rúbrica configurada o quieres que sugiera una?',
-        'lenguaje': 'Perfecto. Para lenguaje evalúo tesis, coherencia, cohesión y análisis. ¿Tienes una rúbrica configurada?',
-        'rubrica': 'Te sugiero esta rúbrica:\n\n• **Procedimiento**: 40%\n• **Resultado**: 30%\n• **Justificación**: 30%\n\n¿Te parece bien o quieres ajustar algo?',
-        'documento': 'Puedes subir tu documento usando el botón 📎 de abajo. Acepto PDF, DOCX o TXT.',
-        'gracias': '¡De nada! Estoy aquí para ayudarte. ¿Algo más en lo que pueda asistirte?',
+        'hola': '¡Hola! 👋 Bienvenido a EvaluAPP. Soy tu agente de evaluación...',
+        'evaluar': '¡Perfecto! Para evaluar un documento...',
       };
-      
-      const mensajeLower = mensaje.toLowerCase();
-      let respuesta = 'Entiendo. ¿Quieres que evalue un documento? Puedes subirlo usando el botón de adjuntar 📎.';
-      
-      for (const [key, value] of Object.entries(respuestas)) {
-        if (mensajeLower.includes(key)) {
-          respuesta = value;
-          break;
-        }
-      }
-      
-      // Detectar si quiere evaluar
-      let accion = 'info';
-      if (mensajeLower.includes('evaluar') || mensajeLower.includes('documento') || mensajeLower.includes('subir')) {
-        accion = 'evaluar';
-      } else if (mensajeLower.includes('rubrica') || mensajeLower.includes('criterios')) {
-        accion = 'rubrica';
-      }
       
       return {
         success: true,
-        respuesta: respuesta,
-        accion: accion,
-        data: accion === 'rubrica' ? {
-          criterios_sugeridos: [
-            { nombre: 'Procedimiento', peso: 40 },
-            { nombre: 'Resultado', peso: 30 },
-            { nombre: 'Justificación', peso: 30 }
-          ]
-        } : null
+        respuesta: respuestas['hola'],
+        accion: 'info',
+        data: null
       };
     }
 
     // Modo real
     const response = await fetch(`${API_URL}/agente/chat`, {
       method: 'POST',
+      mode: 'cors',
       headers: getHeaders(),
       body: JSON.stringify({ mensaje, contexto, historial }),
     });
@@ -205,21 +180,13 @@ export const agenteAPI = {
 
   sugerirRubrica: async (asignatura, tipo_trabajo = '', descripcion = '') => {
     if (MODO_DEMO) {
-      return {
-        success: true,
-        asignatura: asignatura,
-        rubrica: {
-          criterios: [
-            { nombre: 'Procedimiento', peso: 40, descripcion: 'Claridad en los pasos' },
-            { nombre: 'Resultado', peso: 30, descripcion: 'Precisión numérica' },
-            { nombre: 'Justificación', peso: 30, descripcion: 'Argumentación lógica' }
-          ]
-        }
-      };
+      return { success: true, asignatura, rubrica: { criterios: [] } };
     }
 
     const params = new URLSearchParams({ asignatura, tipo_trabajo, descripcion });
     const response = await fetch(`${API_URL}/agente/sugerir-rubrica?${params}`, {
+      method: 'GET',
+      mode: 'cors',
       headers: getHeaders(),
     });
     return response.json();
@@ -271,14 +238,13 @@ export const documentosAPI = {
 
   listar: async (asignatura = '', limit = 50, offset = 0) => {
     if (MODO_DEMO) {
-      return {
-        success: true,
-        documentos: [] // En demo no hay historial persistente
-      };
+      return { success: true, documentos: [] };
     }
 
     const params = new URLSearchParams({ asignatura, limit, offset });
     const response = await fetch(`${API_URL}/documentos?${params}`, {
+      method: 'GET',
+      mode: 'cors',
       headers: getHeaders(),
     });
     return response.json();
@@ -286,6 +252,8 @@ export const documentosAPI = {
 
   obtener: async (documento_id) => {
     const response = await fetch(`${API_URL}/documentos/${documento_id}`, {
+      method: 'GET',
+      mode: 'cors',
       headers: getHeaders(),
     });
     return response.json();
@@ -294,6 +262,7 @@ export const documentosAPI = {
   eliminar: async (documento_id) => {
     const response = await fetch(`${API_URL}/documentos/${documento_id}`, {
       method: 'DELETE',
+      mode: 'cors',
       headers: getHeaders(),
     });
     return response.json();
@@ -301,6 +270,8 @@ export const documentosAPI = {
 
   obtenerResumen: async (documento_id) => {
     const response = await fetch(`${API_URL}/documentos/${documento_id}/resumen`, {
+      method: 'GET',
+      mode: 'cors',
       headers: getHeaders(),
     });
     return response.json();
@@ -353,6 +324,8 @@ export const evaluacionesAPI = {
 
   obtener: async (evaluacion_id) => {
     const response = await fetch(`${API_URL}/evaluaciones/${evaluacion_id}`, {
+      method: 'GET',
+      mode: 'cors',
       headers: getHeaders(),
     });
     return response.json();
@@ -360,6 +333,8 @@ export const evaluacionesAPI = {
 
   descargarReporte: async (evaluacion_id, formato = 'json') => {
     const response = await fetch(`${API_URL}/evaluaciones/${evaluacion_id}/reporte?formato=${formato}`, {
+      method: 'GET',
+      mode: 'cors',
       headers: getHeaders(),
     });
     if (formato === 'word') {
@@ -382,7 +357,10 @@ export const evaluacionesAPI = {
       };
     }
 
-    const response = await fetch(`${API_URL}/evaluaciones/asignaturas/lista`);
+    const response = await fetch(`${API_URL}/evaluaciones/asignaturas/lista`, {
+      method: 'GET',
+      mode: 'cors',
+    });
     return response.json();
   },
 };
