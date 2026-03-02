@@ -48,7 +48,6 @@ function App() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // Simulación de login - en producción sería una llamada al backend
     if (email && password) {
       setUser({ email, name: email.split('@')[0] });
       setIsLoggedIn(true);
@@ -59,11 +58,16 @@ function App() {
   const handleRegister = (e) => {
     e.preventDefault();
     if (email && password) {
+      // Ahora va a la pasarela de pagos, no al wizard gratis
       setUser({ email, name: email.split('@')[0] });
-      setIsLoggedIn(true);
-      setCurrentView('evaluar');
-      setStep(1);
+      setCurrentView('pago');
     }
+  };
+
+  const handlePagoCompleto = () => {
+    // Después del pago, va al dashboard
+    setIsLoggedIn(true);
+    setCurrentView('dashboard');
   };
 
   const handleLogout = () => {
@@ -75,7 +79,7 @@ function App() {
   // ==================== LANDING PAGE ====================
   const renderLanding = () => (
     <div style={styles.landing.container}>
-      {/* Navbar */}
+      {/* Navbar - SIN boton probar gratis */}
       <nav style={styles.landing.navbar}>
         <div style={styles.landing.navLogo}>🎓 EvaluAPP</div>
         <div style={styles.landing.navLinks}>
@@ -91,21 +95,21 @@ function App() {
             onClick={() => setCurrentView('register')}
             style={styles.landing.navButtonPrimary}
           >
-            Probar gratis
+            Suscribirme
           </button>
         </div>
       </nav>
 
-      {/* Hero */}
+      {/* Hero - Titulo en una sola linea */}
       <section style={styles.landing.hero}>
         <h1 style={styles.landing.heroTitle}>
-          Deja de calificar hasta las 2 AM
+          Deja de calificar hasta la madrugada
         </h1>
         <p style={styles.landing.heroSubtitle}>
           EvaluAPP evalua parrafo por parrafo mientras tu descansas
         </p>
         <div style={styles.landing.heroFeatures}>
-          <span style={styles.landing.featureBadge}>⚡ Sin tarjeta</span>
+          <span style={styles.landing.featureBadge}>⚡ Ahorra tiempo</span>
           <span style={styles.landing.featureBadge}>⏱️ 30 segundos</span>
           <span style={styles.landing.featureBadge}>🎯 Precision 95%</span>
         </div>
@@ -113,7 +117,7 @@ function App() {
           onClick={() => setCurrentView('register')}
           style={styles.landing.heroCTA}
         >
-          🚀 Evaluar mi primer trabajo - GRATIS
+          🚀 Suscribirme ahora - $30.000/mes
         </button>
       </section>
 
@@ -196,7 +200,7 @@ function App() {
             onClick={() => setCurrentView('register')}
             style={styles.landing.pricingCTA}
           >
-            🚀 Comenzar ahora
+            🚀 Suscribirme ahora
           </button>
         </div>
       </section>
@@ -208,14 +212,13 @@ function App() {
           onClick={() => setCurrentView('register')}
           style={styles.landing.ctaFinalButton}
         >
-          🚀 Evaluar mi primer trabajo - GRATIS
+          🚀 Suscribirme ahora - $30.000/mes
         </button>
-        <p style={styles.landing.ctaFinalNote}>Sin tarjeta de credito • Cancela cuando quieras</p>
       </section>
 
-      {/* Footer */}
+      {/* Footer - CORREGIDO */}
       <footer style={styles.landing.footer}>
-        <p>© 2025 EvaluAPP • Hecho con ❤️ para profesores colombianos</p>
+        <p>© 2025 EvaluAPP • Hecho con ❤️ por: solucionesdeia@gmail.com para profesores colombianos</p>
       </footer>
     </div>
   );
@@ -270,14 +273,14 @@ function App() {
             onClick={() => setCurrentView('register')}
             style={styles.auth.switchLink}
           >
-            Registrate gratis
+            Suscribirme
           </button>
         </p>
       </div>
     </div>
   );
 
-  // ==================== REGISTER ====================
+  // ==================== REGISTER (ahora lleva a pago) ====================
   const renderRegister = () => (
     <div style={styles.auth.container}>
       <div style={styles.auth.card}>
@@ -289,8 +292,8 @@ function App() {
         </button>
         
         <div style={styles.auth.logo}>🎓 EvaluAPP</div>
-        <h1 style={styles.auth.title}>Tu primera evaluacion es GRATIS</h1>
-        <p style={styles.auth.subtitle}>Solo necesitamos tu email para guardar tu evaluacion</p>
+        <h1 style={styles.auth.title}>Crear cuenta</h1>
+        <p style={styles.auth.subtitle}>Ingresa tus datos para continuar al pago</p>
         
         <form style={styles.auth.form} onSubmit={handleRegister}>
           <div style={styles.auth.formGroup}>
@@ -318,7 +321,7 @@ function App() {
           </div>
           
           <button type="submit" style={styles.auth.submitButton}>
-            Continuar →
+            Continuar al pago →
           </button>
         </form>
         
@@ -335,10 +338,77 @@ function App() {
     </div>
   );
 
+  // ==================== PASARELA DE PAGOS (Nequi QR) ====================
+  const renderPago = () => (
+    <div style={styles.auth.container}>
+      <div style={styles.auth.card}>
+        <button 
+          onClick={() => setCurrentView('register')}
+          style={styles.auth.backButton}
+        >
+          ← Volver
+        </button>
+        
+        <div style={styles.auth.logo}>🎓 EvaluAPP</div>
+        <h1 style={styles.auth.title}>Pago del Plan Profesor</h1>
+        
+        <div style={pagoStyles.resumen}>
+          <div style={pagoStyles.resumenRow}>
+            <span>Plan:</span>
+            <span style={pagoStyles.resumenValue}>Profesor (1 mes)</span>
+          </div>
+          <div style={pagoStyles.resumenRow}>
+            <span>Total a pagar:</span>
+            <span style={pagoStyles.resumenTotal}>$30.000 COP</span>
+          </div>
+        </div>
+
+        <div style={pagoStyles.qrContainer}>
+          <p style={pagoStyles.qrTitle}>📱 Escanea con Nequi o Daviplata</p>
+          
+          {/* Placeholder para QR - aquí iría tu QR real */}
+          <div style={pagoStyles.qrBox}>
+            <div style={pagoStyles.qrPlaceholder}>
+              <span style={pagoStyles.qrIcon}>📲</span>
+              <p style={pagoStyles.qrText}>CODIGO QR NEQUI</p>
+              <p style={pagoStyles.qrSubtext}># de celular: 312 345 6789</p>
+            </div>
+          </div>
+          
+          <p style={pagoStyles.qrInstructions}>
+            1. Abre Nequi o Daviplata<br/>
+            2. Escanea el codigo QR o busca el numero<br/>
+            3. Envia $30.000 COP<br/>
+            4. Despues del pago, haz clic en "Ya pague"
+          </p>
+        </div>
+
+        <div style={pagoStyles.metodosAlternativos}>
+          <p style={pagoStyles.metodosTitle}>Otros metodos de pago:</p>
+          <div style={pagoStyles.metodosList}>
+            <span style={pagoStyles.metodo}>🏦 Bancolombia</span>
+            <span style={pagoStyles.metodo}>💳 Tarjeta</span>
+            <span style={pagoStyles.metodo}>🏪 Efecty</span>
+          </div>
+        </div>
+
+        <button 
+          onClick={handlePagoCompleto}
+          style={pagoStyles.pagoButton}
+        >
+          ✅ Ya realice el pago - Entrar a EvaluAPP
+        </button>
+        
+        <p style={pagoStyles.notaSeguridad}>
+          🔒 Al hacer clic confirmas que realizaste el pago. Verificaremos en las proximas 24 horas.
+        </p>
+      </div>
+    </div>
+  );
+
   // ==================== DASHBOARD ====================
   const renderDashboard = () => (
     <div style={styles.dashboard.container}>
-      {/* Navbar */}
       <nav style={styles.dashboard.navbar}>
         <div style={styles.dashboard.navLeft}>
           <span style={styles.dashboard.logo}>🎓 EvaluAPP</span>
@@ -359,11 +429,9 @@ function App() {
         </div>
       </nav>
 
-      {/* Main Content */}
       <main style={styles.dashboard.main}>
         <h1 style={styles.dashboard.title}>Dashboard</h1>
         
-        {/* Stats Cards */}
         <div style={styles.dashboard.statsGrid}>
           <div style={styles.dashboard.statCard}>
             <div style={styles.dashboard.statIcon}>📝</div>
@@ -387,7 +455,6 @@ function App() {
           </div>
         </div>
 
-        {/* CTA Principal */}
         <button 
           onClick={() => { setCurrentView('evaluar'); setStep(1); }}
           style={styles.dashboard.mainCTA}
@@ -395,7 +462,6 @@ function App() {
           ➕ Nueva Evaluacion
         </button>
 
-        {/* Historial Reciente */}
         <h2 style={styles.dashboard.sectionTitle}>Evaluaciones recientes</h2>
         <div style={styles.dashboard.table}>
           <div style={styles.dashboard.tableHeader}>
@@ -557,10 +623,10 @@ function App() {
             <div style={styles.wizard.pricingBox}>
               <div style={styles.wizard.pricingRow}>
                 <span style={styles.wizard.pricingLabel}>💰 COSTO ESTIMADO</span>
-                <span style={styles.wizard.pricingValue}>GRATIS</span>
+                <span style={styles.wizard.pricingValue}>Desde tu plan</span>
               </div>
               <p style={styles.wizard.pricingNote}>
-                Esta primera evaluacion es gratuita
+                Se descontara de tus palabras disponibles
               </p>
             </div>
 
@@ -609,37 +675,24 @@ function App() {
           </div>
         </div>
 
-        <div style={styles.result.watermark}>
-          <div style={styles.result.watermarkText}>
-            🔒 Resultado de muestra
-          </div>
-          <p style={styles.result.watermarkDesc}>
-            Para ver la evaluacion completa parrafo por parrafo,
-            suscribete al Plan Profesor.
-          </p>
-        </div>
-
         <div style={styles.result.previewFeatures}>
-          <h3 style={styles.result.previewTitle}>Lo que incluye la version completa:</h3>
+          <h3 style={styles.result.previewTitle}>Detalle de la evaluacion:</h3>
           <ul style={styles.result.previewList}>
-            <li>✅ Evaluacion detallada por cada parrafo</li>
-            <li>✅ Retroalimentacion especifica con correcciones</li>
-            <li>✅ Calificacion por criterios de tu rubrica</li>
-            <li>✅ Exportar a PDF con tu sello</li>
-            <li>✅ Historial ilimitado de evaluaciones</li>
+            <li>✅ Evaluacion por segmentos completada</li>
+            <li>✅ Retroalimentacion generada</li>
+            <li>✅ Palabras consumidas: 1,250</li>
+            <li>✅ Palabras restantes: 118,750</li>
           </ul>
         </div>
 
         <button 
-          onClick={() => setCurrentView('landing')}
+          onClick={() => {
+            setCurrentView('dashboard');
+          }}
           style={styles.result.subscribeButton}
         >
-          💳 Suscribirme ahora - $30.000/mes
+          📊 Ver en Dashboard
         </button>
-        
-        <p style={styles.result.secureNote}>
-          🔒 Pago seguro con PayU (PSE, Tarjeta, Efecty)
-        </p>
 
         <button 
           onClick={() => {
@@ -662,6 +715,7 @@ function App() {
       {currentView === 'landing' && renderLanding()}
       {currentView === 'login' && renderLogin()}
       {currentView === 'register' && renderRegister()}
+      {currentView === 'pago' && renderPago()}
       {currentView === 'dashboard' && renderDashboard()}
       {currentView === 'evaluar' && renderEvaluar()}
       {currentView === 'resultado' && renderResultado()}
@@ -669,7 +723,7 @@ function App() {
   );
 }
 
-// ==================== ESTILOS MEJORADOS ====================
+// ==================== ESTILOS ====================
 const styles = {
   landing: {
     container: {
@@ -709,7 +763,6 @@ const styles = {
       fontSize: '15px',
       fontWeight: '500',
       transition: 'color 0.2s',
-      ':hover': { color: '#fff' },
     },
     navButtonSecondary: {
       background: 'transparent',
@@ -739,17 +792,18 @@ const styles = {
       background: 'radial-gradient(ellipse at center, #1a1a3e 0%, #0f0f23 70%)',
     },
     heroTitle: {
-      fontSize: '64px',
+      fontSize: '52px',
       fontWeight: '800',
       marginBottom: '24px',
       maxWidth: '900px',
       marginLeft: 'auto',
       marginRight: 'auto',
-      lineHeight: '1.1',
-      letterSpacing: '-2px',
+      lineHeight: '1.2',
+      letterSpacing: '-1px',
       background: 'linear-gradient(135deg, #fff 0%, #a5b4fc 100%)',
       WebkitBackgroundClip: 'text',
       WebkitTextFillColor: 'transparent',
+      whiteSpace: 'nowrap',
     },
     heroSubtitle: {
       fontSize: '22px',
@@ -785,7 +839,6 @@ const styles = {
       fontWeight: '700',
       cursor: 'pointer',
       boxShadow: '0 8px 30px rgba(102, 126, 234, 0.5)',
-      transition: 'transform 0.2s',
     },
     section: {
       background: '#0f0f23',
@@ -972,10 +1025,6 @@ const styles = {
       cursor: 'pointer',
       marginBottom: '16px',
       boxShadow: '0 8px 30px rgba(102, 126, 234, 0.5)',
-    },
-    ctaFinalNote: {
-      color: '#808090',
-      fontSize: '15px',
     },
     footer: {
       background: '#080810',
@@ -1410,8 +1459,8 @@ const styles = {
       letterSpacing: '1px',
     },
     pricingValue: {
-      fontSize: '36px',
-      fontWeight: '800',
+      fontSize: '24px',
+      fontWeight: '700',
       color: '#22c55e',
     },
     pricingNote: {
@@ -1471,30 +1520,12 @@ const styles = {
       margin: '4px 0 0 0',
       fontWeight: '600',
     },
-    watermark: {
-      background: 'rgba(245, 158, 11, 0.1)',
-      border: '1px dashed rgba(245, 158, 11, 0.4)',
-      borderRadius: '12px',
-      padding: '20px',
-      marginBottom: '28px',
-    },
-    watermarkText: {
-      fontSize: '16px',
-      fontWeight: '700',
-      color: '#fbbf24',
-      marginBottom: '8px',
-    },
-    watermarkDesc: {
-      fontSize: '14px',
-      color: '#fcd34d',
-      margin: 0,
-    },
     previewFeatures: {
       textAlign: 'left',
       marginBottom: '28px',
     },
     previewTitle: {
-      fontSize: '15px',
+      fontSize: '16px',
       fontWeight: '600',
       color: '#c0c0d0',
       marginBottom: '16px',
@@ -1517,11 +1548,6 @@ const styles = {
       marginBottom: '12px',
       boxShadow: '0 8px 25px rgba(102, 126, 234, 0.4)',
     },
-    secureNote: {
-      fontSize: '13px',
-      color: '#606070',
-      marginBottom: '20px',
-    },
     retryButton: {
       background: 'transparent',
       color: '#a5b4fc',
@@ -1532,6 +1558,112 @@ const styles = {
       fontWeight: '600',
       cursor: 'pointer',
     },
+  },
+};
+
+// Estilos adicionales para la pasarela de pagos
+const pagoStyles = {
+  resumen: {
+    background: 'rgba(255,255,255,0.05)',
+    borderRadius: '12px',
+    padding: '20px',
+    marginBottom: '24px',
+  },
+  resumenRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    padding: '8px 0',
+    color: '#c0c0d0',
+    fontSize: '14px',
+  },
+  resumenValue: {
+    fontWeight: '600',
+    color: '#fff',
+  },
+  resumenTotal: {
+    fontSize: '20px',
+    fontWeight: '800',
+    color: '#22c55e',
+  },
+  qrContainer: {
+    marginBottom: '24px',
+  },
+  qrTitle: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: '16px',
+    textAlign: 'center',
+  },
+  qrBox: {
+    background: '#fff',
+    borderRadius: '12px',
+    padding: '20px',
+    marginBottom: '16px',
+    textAlign: 'center',
+  },
+  qrPlaceholder: {
+    padding: '20px',
+  },
+  qrIcon: {
+    fontSize: '48px',
+    marginBottom: '8px',
+  },
+  qrText: {
+    color: '#1f2937',
+    fontSize: '16px',
+    fontWeight: '700',
+    margin: '0 0 8px 0',
+  },
+  qrSubtext: {
+    color: '#6b7280',
+    fontSize: '14px',
+    margin: 0,
+  },
+  qrInstructions: {
+    fontSize: '13px',
+    color: '#808090',
+    lineHeight: '1.6',
+    textAlign: 'center',
+  },
+  metodosAlternativos: {
+    marginBottom: '24px',
+  },
+  metodosTitle: {
+    fontSize: '14px',
+    color: '#808090',
+    marginBottom: '12px',
+    textAlign: 'center',
+  },
+  metodosList: {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '12px',
+    flexWrap: 'wrap',
+  },
+  metodo: {
+    background: 'rgba(255,255,255,0.05)',
+    padding: '8px 16px',
+    borderRadius: '20px',
+    fontSize: '13px',
+    color: '#c0c0d0',
+  },
+  pagoButton: {
+    width: '100%',
+    background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+    color: '#fff',
+    border: 'none',
+    padding: '16px',
+    borderRadius: '10px',
+    fontSize: '16px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    marginBottom: '12px',
+  },
+  notaSeguridad: {
+    fontSize: '12px',
+    color: '#606070',
+    textAlign: 'center',
   },
 };
 
