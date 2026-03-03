@@ -19,6 +19,9 @@ function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nombre, setNombre] = useState('');
+  
+  // Constante para límite de bcrypt (72 bytes)
+  const MAX_PASSWORD_BYTES = 72;
 
   // Verificar sesión al iniciar
   useEffect(() => {
@@ -95,20 +98,24 @@ function App() {
     setError('');
     
     try {
-      console.log('Intentando login:', email);
+      console.log('🔑 Intentando login:', email);
       const data = await authAPI.login(email, password);
-      console.log('Respuesta login:', data);
+      console.log('📦 Respuesta login:', data);
       
       if (data.success) {
-        setUser(data.user);
+        const userData = data.user || data;
+        setUser(userData);
         setCurrentView('dashboard');
-        cargarHistorial();
+        await cargarHistorial();
+        console.log('✅ Login exitoso, redirigiendo a dashboard');
       } else {
-        setError(data.message || data.detail || JSON.stringify(data) || 'Error al iniciar sesion');
+        const errorMsg = data.message || data.detail || 'Error al iniciar sesión. Verifica tus credenciales.';
+        console.error('❌ Error login:', errorMsg);
+        setError(errorMsg);
       }
     } catch (err) {
-      console.error('Error login:', err);
-      setError('Error de conexion: ' + (err.message || 'No se pudo conectar'));
+      console.error('❌ Error crítico login:', err);
+      setError('Error de conexión: ' + (err.message || 'No se pudo conectar al servidor'));
     } finally {
       setIsLoading(false);
     }
@@ -119,20 +126,39 @@ function App() {
     setIsLoading(true);
     setError('');
     
+    // Validación de contraseña
+    if (password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      setIsLoading(false);
+      return;
+    }
+    
+    // Validación: bcrypt tiene límite de 72 bytes
+    const passwordBytes = new Blob([password]).size;
+    if (passwordBytes > MAX_PASSWORD_BYTES) {
+      setError(`La contraseña es demasiado larga (máximo ${MAX_PASSWORD_BYTES} caracteres)`);
+      setIsLoading(false);
+      return;
+    }
+    
     try {
-      console.log('Intentando registrar:', { email, nombre });
+      console.log('📝 Intentando registrar:', { email, nombre });
       const data = await authAPI.register(email, password, nombre, '');
-      console.log('Respuesta del servidor:', data);
+      console.log('📦 Respuesta registro:', data);
       
       if (data.success) {
-        setUser(data.user);
+        const userData = data.user || data;
+        setUser(userData);
         setCurrentView('dashboard');
+        console.log('✅ Registro exitoso, redirigiendo a dashboard');
       } else {
-        setError(data.message || data.detail || JSON.stringify(data) || 'Error al crear cuenta');
+        const errorMsg = data.message || data.detail || 'Error al crear la cuenta. Intenta con otro email.';
+        console.error('❌ Error registro:', errorMsg);
+        setError(errorMsg);
       }
     } catch (err) {
-      console.error('Error completo:', err);
-      setError('Error de conexion: ' + (err.message || 'No se pudo conectar al servidor'));
+      console.error('❌ Error crítico registro:', err);
+      setError('Error de conexión: ' + (err.message || 'No se pudo conectar al servidor'));
     } finally {
       setIsLoading(false);
     }
@@ -148,6 +174,21 @@ function App() {
 
   const iniciarEvaluacion = async (file, asignatura) => {
     setError('');
+    
+    if (!file || !asignatura) {
+      setError('Selecciona un archivo y una asignatura');
+      return;
+    }
+    
+    // Validar tipo de archivo
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+    const allowedExts = ['.pdf', '.doc', '.docx', '.txt'];
+    const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+    
+    if (!allowedExts.includes(fileExt)) {
+      setError(`Formato no soportado: ${fileExt}. Usa PDF, DOC, DOCX o TXT`);
+      return;
+    }
     
     // Paso 1: Subir documento
     const nuevoDoc = {
@@ -166,38 +207,49 @@ function App() {
     setResultadoEvaluacion(null);
 
     try {
+      console.log('📤 Subiendo archivo:', file.name, 'tamaño:', (file.size/1024).toFixed(1), 'KB');
+      
       // Subir archivo
       const uploadData = await documentosAPI.subir(file, asignatura);
+      console.log('📦 Respuesta subida:', uploadData);
       
       if (!uploadData.success) {
-        setError(uploadData.message || 'Error al subir documento');
+        const errorMsg = uploadData.message || 'Error al subir documento';
+        console.error('❌ Error subida:', errorMsg);
+        setError(errorMsg);
         setEvaluacionActiva(null);
         return;
       }
 
-      // Mostrar estimación al usuario (podrías hacer un modal de confirmación aquí)
-      const estimacion = uploadData.estimacion;
+      // Mostrar estimación al usuario
+      const estimacion = uploadData.estimacion || uploadData;
+      console.log('📊 Estimación:', estimacion);
       
       // Actualizar pasos
+      const wordCount = estimacion.word_count || estimacion.wordCount || 'desconocidas';
       setProcesoEvaluacion(prev => [...prev, 
-        { id: 2, titulo: 'Documento recibido', descripcion: `${estimacion.word_count} palabras detectadas`, completado: true }
+        { id: 2, titulo: 'Documento recibido', descripcion: `${wordCount} palabras detectadas`, completado: true }
       ]);
 
       // Paso 2: Procesar evaluación
-      const evalData = await evaluacionesAPI.procesar(
-        estimacion.temp_id || uploadData.documento_id, 
-        asignatura
-      );
+      const docId = estimacion.temp_id || estimacion.documento_id || uploadData.documento_id;
+      console.log('🔄 Procesando documento ID:', docId);
+      
+      const evalData = await evaluacionesAPI.procesar(docId, asignatura);
+      console.log('📦 Respuesta evaluación:', evalData);
 
       if (!evalData.success) {
-        setError(evalData.message || 'Error al procesar evaluacion');
+        const errorMsg = evalData.message || 'Error al procesar evaluación';
+        console.error('❌ Error evaluación:', errorMsg);
+        setError(errorMsg);
         return;
       }
 
       // Mostrar pasos de procesamiento
+      const totalSegments = evalData.evaluacion?.total_segments || evalData.segmentos?.length || 5;
       const pasosProceso = [
         { id: 3, titulo: 'Analizando documento...', descripcion: 'Extrayendo texto y estructura', completado: true },
-        { id: 4, titulo: 'Segmentando contenido...', descripcion: `Dividiendo en ${evalData.evaluacion?.total_segments || 5} segmentos`, completado: true },
+        { id: 4, titulo: 'Segmentando contenido...', descripcion: `Dividiendo en ${totalSegments} segmentos`, completado: true },
         { id: 5, titulo: 'Aplicando rúbrica...', descripcion: 'Evaluando cada criterio con IA', completado: true },
         { id: 6, titulo: 'Generando retroalimentación...', descripcion: 'Creando comentarios personalizados', completado: true },
       ];
@@ -206,31 +258,32 @@ function App() {
 
       // Guardar resultado
       const resultado = {
-        calificacion_global: evalData.calificacion_global || evalData.evaluacion?.calificacion_global,
-        semaforo: evalData.semaforo_global || evalData.evaluacion?.semaforo_global,
-        palabras: estimacion.word_count,
+        calificacion_global: evalData.calificacion_global || evalData.evaluacion?.calificacion_global || 'N/A',
+        semaforo: evalData.semaforo_global || evalData.evaluacion?.semaforo_global || 'GRIS',
+        palabras: wordCount,
         segmentos: evalData.segmentos || evalData.evaluacion?.segmentos || [],
-        fortalezas: ['Análisis detallado completado', 'Estructura bien definida'],
-        mejoras: ['Revisar conectores lógicos', 'Ampliar bibliografía'],
-        evaluacion_id: evalData.id,
-        documento_id: uploadData.documento_id || estimacion.temp_id,
+        fortalezas: evalData.fortalezas || ['Análisis completado'],
+        mejoras: evalData.mejoras || ['Revisar detalles'],
+        evaluacion_id: evalData.id || evalData.evaluacion_id,
+        documento_id: docId,
       };
 
       setResultadoEvaluacion(resultado);
       setEvaluacionActiva(prev => ({ ...prev, estado: 'completado', resultado }));
       
-      // Actualizar historial
+      // Actualizar historial y saldo
       await cargarHistorial();
-      
-      // Actualizar saldo del usuario
       const me = await authAPI.getMe();
       if (me.success) {
         setUser(me.user);
       }
+      
+      console.log('✅ Evaluación completada');
 
     } catch (err) {
-      console.error('Error en evaluacion:', err);
-      setError('Error al procesar la evaluación. Intenta de nuevo.');
+      console.error('❌ Error en evaluacion:', err);
+      setError('Error al procesar la evaluación: ' + (err.message || 'Error desconocido'));
+      setEvaluacionActiva(null);
     }
   };
 
@@ -269,7 +322,9 @@ function App() {
           <input type="email" placeholder="Email" style={styles.auth.input}
             value={email} onChange={(e) => setEmail(e.target.value)} required />
           <input type="password" placeholder="Contraseña" style={styles.auth.input}
-            value={password} onChange={(e) => setPassword(e.target.value)} required />
+            value={password} onChange={(e) => setPassword(e.target.value)} required 
+            maxLength={MAX_PASSWORD_BYTES}
+          />
           <button type="submit" style={styles.auth.submitButton} disabled={isLoading}>
             {isLoading ? '⏳ Entrando...' : '🚀 Entrar'}
           </button>

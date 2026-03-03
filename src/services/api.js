@@ -1,8 +1,15 @@
 // Servicios API para conectar con el backend
 const API_URL = process.env.REACT_APP_API_URL || 'https://web-production-83f44.up.railway.app';
 
-// MODO DEMO: Cambiar a false cuando el backend esté listo
+// 🎮 MODO DEMO: Cambiar a true para probar sin backend
+// El backend de Railway puede estar dormido después de inactividad
 const MODO_DEMO = false;
+
+console.log('🔌 API_URL:', API_URL);
+console.log('🎮 MODO_DEMO:', MODO_DEMO);
+if (MODO_DEMO) {
+  console.log('⚠️  ATENCION: MODO DEMO activado - Usando datos simulados');
+}
 
 // Helper para obtener headers con token
 const getHeaders = (contentType = 'application/json') => {
@@ -45,6 +52,7 @@ export const authAPI = {
 
     // Modo real: conectar con backend
     try {
+      console.log('🔌 Conectando a:', `${API_URL}/auth/login`);
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         mode: 'cors',
@@ -52,19 +60,25 @@ export const authAPI = {
         body: JSON.stringify({ email, password }),
       });
       
+      console.log('📡 Status:', response.status);
+      
       if (!response.ok) {
         const errorText = await response.text();
-        return { success: false, message: `Error ${response.status}: ${errorText}` };
+        console.error('❌ Error HTTP:', response.status, errorText);
+        return { success: false, message: `Error ${response.status}: ${errorText || 'Error del servidor'}` };
       }
       
       const data = await response.json();
-      if (data.success && data.access_token) {
+      console.log('✅ Login exitoso:', data.success);
+      
+      if (data.access_token) {
         localStorage.setItem('token', data.access_token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('user', JSON.stringify(data.user || data));
       }
-      return data;
+      return { success: true, ...data };
     } catch (error) {
-      return { success: false, message: error.message };
+      console.error('❌ Error de conexión:', error);
+      return { success: false, message: `Error de conexión: ${error.message}. Verifica que el backend esté disponible.` };
     }
   },
 
@@ -138,12 +152,30 @@ export const authAPI = {
   },
 
   getMe: async () => {
-    const response = await fetch(`${API_URL}/auth/me`, {
-      method: 'GET',
-      mode: 'cors',
-      headers: getHeaders(),
-    });
-    return response.json();
+    try {
+      const response = await fetch(`${API_URL}/auth/me`, {
+        method: 'GET',
+        mode: 'cors',
+        headers: getHeaders(),
+      });
+      
+      if (response.status === 401) {
+        // Token expirado o inválido
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        return { success: false, message: 'Sesión expirada. Por favor inicia sesión de nuevo.', expired: true };
+      }
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { success: false, message: `Error ${response.status}: ${errorText}` };
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('❌ Error en getMe:', error);
+      return { success: false, message: error.message };
+    }
   },
 };
 
@@ -221,19 +253,44 @@ export const documentosAPI = {
       };
     }
 
-    const formData = new FormData();
-    formData.append('archivo', file);
-    formData.append('asignatura', asignatura);
-    if (rubrica) {
-      formData.append('rubrica_json', JSON.stringify(rubrica));
-    }
+    try {
+      const formData = new FormData();
+      formData.append('archivo', file);
+      formData.append('asignatura', asignatura);
+      if (rubrica) {
+        formData.append('rubrica_json', JSON.stringify(rubrica));
+      }
 
-    const response = await fetch(`${API_URL}/documentos/subir`, {
-      method: 'POST',
-      headers: getHeaders(null),
-      body: formData,
-    });
-    return response.json();
+      // IMPORTANTE: No usar getHeaders() con FormData
+      // El browser debe establecer Content-Type con boundary automáticamente
+      const token = localStorage.getItem('token');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      console.log('📤 Subiendo archivo:', file.name, 'asignatura:', asignatura);
+      
+      const response = await fetch(`${API_URL}/documentos/subir`, {
+        method: 'POST',
+        mode: 'cors',
+        headers: headers, // Sin Content-Type para que browser ponga el boundary
+        body: formData,
+      });
+      
+      console.log('📡 Status subida:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error subiendo archivo:', response.status, errorText);
+        return { success: false, message: `Error ${response.status}: ${errorText || 'Error al subir archivo'}` };
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('❌ Error de conexión subiendo archivo:', error);
+      return { success: false, message: `Error de conexión: ${error.message}` };
+    }
   },
 
   listar: async (asignatura = '', limit = 50, offset = 0) => {
@@ -284,7 +341,7 @@ export const evaluacionesAPI = {
     // MODO DEMO: Simular procesamiento
     if (MODO_DEMO) {
       console.log('🎮 MODO DEMO: Evaluación simulada');
-      await new Promise(r => setTimeout(r, 3000)); // Simular procesamiento de 3 segundos
+      await new Promise(r => setTimeout(r, 3000));
       
       return {
         success: true,
@@ -307,19 +364,41 @@ export const evaluacionesAPI = {
       };
     }
 
-    const formData = new FormData();
-    formData.append('documento_id', documento_id);
-    formData.append('asignatura', asignatura);
-    if (rubrica) {
-      formData.append('rubrica', JSON.stringify(rubrica));
-    }
+    try {
+      const formData = new FormData();
+      formData.append('documento_id', documento_id);
+      formData.append('asignatura', asignatura);
+      if (rubrica) {
+        formData.append('rubrica', JSON.stringify(rubrica));
+      }
 
-    const response = await fetch(`${API_URL}/evaluaciones/procesar`, {
-      method: 'POST',
-      headers: getHeaders(null),
-      body: formData,
-    });
-    return response.json();
+      // IMPORTANTE: No usar Content-Type manual con FormData
+      const token = localStorage.getItem('token');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      console.log('🔄 Procesando evaluación:', documento_id);
+
+      const response = await fetch(`${API_URL}/evaluaciones/procesar`, {
+        method: 'POST',
+        mode: 'cors',
+        headers: headers,
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error procesando:', response.status, errorText);
+        return { success: false, message: `Error ${response.status}: ${errorText || 'Error al procesar'}` };
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('❌ Error de conexión procesando:', error);
+      return { success: false, message: `Error de conexión: ${error.message}` };
+    }
   },
 
   obtener: async (evaluacion_id) => {
@@ -357,11 +436,32 @@ export const evaluacionesAPI = {
       };
     }
 
-    const response = await fetch(`${API_URL}/evaluaciones/asignaturas/lista`, {
-      method: 'GET',
-      mode: 'cors',
-    });
-    return response.json();
+    try {
+      const response = await fetch(`${API_URL}/evaluaciones/asignaturas/lista`, {
+        method: 'GET',
+        mode: 'cors',
+        headers: getHeaders(),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('❌ Error cargando asignaturas:', error);
+      // Fallback a lista por defecto
+      return {
+        asignaturas: [
+          { id: 'matematicas', nombre: 'Matemáticas', icono: '📐' },
+          { id: 'lenguaje', nombre: 'Lengua Castellana', icono: '📚' },
+          { id: 'ingles', nombre: 'Inglés', icono: '🗣️' },
+          { id: 'sociales', nombre: 'Ciencias Sociales', icono: '🌍' },
+          { id: 'ciencias', nombre: 'Ciencias Naturales', icono: '🔬' },
+          { id: 'artes', nombre: 'Artes', icono: '🎨' },
+        ]
+      };
+    }
   },
 };
 
