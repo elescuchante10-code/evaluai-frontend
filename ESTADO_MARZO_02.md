@@ -134,6 +134,17 @@ El backend ya tiene CORS habilitado para:
 - **Backend docs:** https://web-production-83f44.up.railway.app/docs
 - **GitHub repo:** https://github.com/elescuchante10-code/evaluai-frontend
 
+## ⚠️ GitHub Pages - DESACTIVADO
+
+**Decisión:** Solo usaremos `localhost:3000` para desarrollo hasta que el diseño esté listo.
+
+**Instrucciones:** Ver archivo `DESACTIVAR_GITHUB_PAGES.md` en el repo.
+
+**Para activar en el futuro:**
+1. GitHub → Settings → Pages
+2. Source: "Deploy from a branch"
+3. Ejecutar: `npm run deploy`
+
 ---
 
 *Guardado en GitHub: ✅*  
